@@ -5,11 +5,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,10 +25,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -32,16 +39,22 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.rotate
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.random.Random
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prashant.marrowquiz.domain.models.Question
 import com.prashant.marrowquiz.domain.models.QuizState
 import com.prashant.marrowquiz.presentation.models.QuizUiState
@@ -54,12 +67,12 @@ fun QuizScreen(
     onQuizCompleted: (QuizState) -> Unit,
     viewModel: QuizViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    
+    val uiState by viewModel.uiState.collectAsState()
+
     LaunchedEffect(questions) {
         viewModel.initializeQuiz(questions)
     }
-    
+
     LaunchedEffect(uiState.currentQuestionIndex, uiState.totalQuestions) {
         println("QuizScreen: currentIndex=${uiState.currentQuestionIndex}, total=${uiState.totalQuestions}")
         if (uiState.currentQuestionIndex >= uiState.totalQuestions && uiState.totalQuestions > 0) {
@@ -67,33 +80,40 @@ fun QuizScreen(
             onQuizCompleted(viewModel.getQuizState())
         }
     }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-            .widthIn(max = 600.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        QuizHeader(uiState = uiState)
-        
-        uiState.currentQuestion?.let { question ->
-            QuestionCard(
-                question = question,
-                uiState = uiState,
-                onOptionSelected = { optionIndex ->
-                    viewModel.selectAnswer(optionIndex)
-                }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
+                .widthIn(max = 600.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            QuizHeader(uiState = uiState)
+
+            uiState.currentQuestion?.let { question ->
+                QuestionCard(
+                    question = question,
+                    uiState = uiState,
+                    onOptionSelected = { optionIndex ->
+                        viewModel.selectAnswer(optionIndex)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            SkipButton(
+                enabled = !uiState.isAnswerRevealed,
+                onClick = { viewModel.skipQuestion() }
             )
         }
-        
-        Spacer(modifier = Modifier.weight(1f))
-        
-        SkipButton(
-            enabled = !uiState.isAnswerRevealed,
-            onClick = { viewModel.skipQuestion() }
+
+        CelebrationConfetti(
+            isVisible = uiState.isAnswerRevealed && uiState.isCorrect == true,
+            modifier = Modifier.fillMaxSize()
         )
     }
 }
@@ -113,7 +133,7 @@ private fun QuizHeader(uiState: QuizUiState) {
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold
             )
-            
+
             Row(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
@@ -125,14 +145,14 @@ private fun QuizHeader(uiState: QuizUiState) {
                 ) {
                     StreakBadge(streak = uiState.currentStreak)
                 }
-                
+
                 QuizTimer(
                     timeRemaining = uiState.timeRemaining,
                     timeLimit = uiState.timeLimit
                 )
             }
         }
-        
+
         LinearProgressIndicator(
             progress = uiState.progress,
             modifier = Modifier
@@ -140,7 +160,7 @@ private fun QuizHeader(uiState: QuizUiState) {
                 .height(8.dp)
                 .clip(RoundedCornerShape(4.dp)),
         )
-        
+
         Text(
             text = "Correct: ${uiState.correctAnswers} | Streak: ${uiState.currentStreak}",
             fontSize = 14.sp,
@@ -189,7 +209,7 @@ private fun QuestionCard(
                 fontWeight = FontWeight.Medium,
                 lineHeight = 24.sp
             )
-            
+
             question.options.forEachIndexed { index, option ->
                 OptionButton(
                     text = option,
@@ -219,31 +239,41 @@ private fun OptionButton(
     val correctColor = Color(0xFF4CAF50) // Material Green
     val incorrectColor = Color(0xFFF44336) // Material Red
     val selectedColor = MaterialTheme.colorScheme.primary
-    
+
+    val scale by animateFloatAsState(
+        targetValue = if (isRevealed && isCorrect) 1.05f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessLow
+        ),
+        label = "correctAnswerScale"
+    )
+
     val backgroundColor = when {
         isRevealed && isCorrect -> correctColor.copy(alpha = 0.15f)
         isRevealed && isSelected && !isCorrect -> incorrectColor.copy(alpha = 0.15f)
         isSelected && !isRevealed -> selectedColor.copy(alpha = 0.1f)
         else -> MaterialTheme.colorScheme.surface
     }
-    
+
     val borderColor = when {
         isRevealed && isCorrect -> correctColor
         isRevealed && isSelected && !isCorrect -> incorrectColor
         isSelected && !isRevealed -> selectedColor
         else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
     }
-    
+
     val textColor = when {
         isRevealed && isCorrect -> correctColor
         isRevealed && isSelected && !isCorrect -> incorrectColor
         else -> MaterialTheme.colorScheme.onSurface
     }
-    
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(56.dp)
+            .scale(scale)
             .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
             .border(
@@ -282,15 +312,24 @@ private fun OptionButton(
                     fontWeight = FontWeight.Bold
                 )
             }
-            
+
             Text(
                 text = text,
                 color = textColor,
                 fontSize = 16.sp,
                 modifier = Modifier.weight(1f)
             )
-            
-            if (isRevealed) {
+
+            AnimatedVisibility(
+                visible = isRevealed,
+                enter = scaleIn(
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    )
+                ) + fadeIn(),
+                exit = scaleOut() + fadeOut()
+            ) {
                 Text(
                     text = if (isCorrect) "✓" else if (isSelected) "✗" else "",
                     color = if (isCorrect) correctColor else incorrectColor,
@@ -313,5 +352,85 @@ private fun SkipButton(
         modifier = Modifier.fillMaxWidth()
     ) {
         Text("Skip Question")
+    }
+}
+
+@Composable
+fun ConfettiParticle(
+    modifier: Modifier = Modifier,
+    color: Color,
+    startDelay: Long = 0L
+) {
+    val animatable = remember { Animatable(0f) }
+    val rotation = remember { Animatable(0f) }
+
+    LaunchedEffect(Unit) {
+        delay(startDelay)
+        launch {
+            animatable.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(
+                    durationMillis = 2000,
+                    easing = LinearEasing
+                )
+            )
+        }
+        launch {
+            rotation.animateTo(
+                targetValue = 360f * Random.nextInt(2, 5),
+                animationSpec = tween(
+                    durationMillis = 2000,
+                    easing = LinearEasing
+                )
+            )
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .size(8.dp)
+            .rotate(rotation.value)
+            .scale(1f - animatable.value * 0.5f)
+            .background(
+                color = color.copy(alpha = 1f - animatable.value),
+                shape = RoundedCornerShape(2.dp)
+            )
+    )
+}
+
+@Composable
+fun CelebrationConfetti(
+    isVisible: Boolean,
+    modifier: Modifier = Modifier
+) {
+    if (isVisible) {
+        val confettiColors = listOf(
+            Color(0xFFFFD700),
+            Color(0xFF4CAF50),
+            Color(0xFF2196F3),
+            Color(0xFFFF9800),
+            Color(0xFFE91E63),
+            Color(0xFF9C27B0)
+        )
+
+        Box(modifier = modifier.fillMaxSize()) {
+            repeat(20) { index ->
+                val randomX = Random.nextFloat()
+                val randomColor = confettiColors.random()
+                val randomDelay = Random.nextLong(0, 500)
+
+                ConfettiParticle(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .wrapContentSize(Alignment.TopStart)
+                        .offset(
+                            x = (randomX * 300).dp,
+                            y = (-20).dp
+                        ),
+                    color = randomColor,
+                    startDelay = randomDelay
+                )
+            }
+        }
     }
 }
