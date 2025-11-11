@@ -22,6 +22,8 @@ object NetworkModule {
             ignoreUnknownKeys = true
             isLenient = true
             encodeDefaults = false
+            coerceInputValues = true
+            useAlternativeNames = false
         }
     }
     

@@ -59,8 +59,10 @@ dependencies {
     implementation(libs.lifecycle.viewmodel.compose)
     implementation(libs.lifecycle.viewmodel.ktx)
     implementation(libs.lifecycle.livedata.ktx)
+    implementation(libs.lifecycle.compose)
     
     implementation(libs.hilt.android)
+    implementation(libs.androidx.foundation.layout)
     kapt(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
     
@@ -68,6 +70,7 @@ dependencies {
     implementation(libs.ktor.client.content.negotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.kotlinx.serialization.core)
     
     implementation(libs.kotlinx.coroutines.android)
     
