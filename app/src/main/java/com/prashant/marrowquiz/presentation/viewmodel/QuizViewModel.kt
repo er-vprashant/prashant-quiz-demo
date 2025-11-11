@@ -8,6 +8,7 @@ import com.prashant.marrowquiz.domain.usecase.AnswerQuestionUseCase
 import com.prashant.marrowquiz.domain.usecase.ResetQuizUseCase
 import com.prashant.marrowquiz.domain.usecase.SkipQuestionUseCase
 import com.prashant.marrowquiz.presentation.models.QuizUiState
+import com.prashant.marrowquiz.presentation.utils.FeedbackService
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,7 +22,8 @@ import javax.inject.Inject
 class QuizViewModel @Inject constructor(
     private val answerQuestionUseCase: AnswerQuestionUseCase,
     private val skipQuestionUseCase: SkipQuestionUseCase,
-    private val resetQuizUseCase: ResetQuizUseCase
+    private val resetQuizUseCase: ResetQuizUseCase,
+    private val feedbackService: FeedbackService
 ) : ViewModel() {
     
     private var quizState = QuizState()
@@ -40,9 +42,10 @@ class QuizViewModel @Inject constructor(
         if (_uiState.value.isAnswerRevealed) return
         
         stopTimer()
-        
         val currentQuestion = quizState.currentQuestion ?: return
         val isCorrect = optionIndex == currentQuestion.correctOptionIndex
+
+        feedbackService.onOptionSelect()
         
         _uiState.value = _uiState.value.copy(
             isAnswerRevealed = true,
@@ -52,9 +55,16 @@ class QuizViewModel @Inject constructor(
         
         quizState = answerQuestionUseCase(quizState, optionIndex)
 
+        if (isCorrect) {
+            feedbackService.onCorrectAnswer()
+        } else {
+            feedbackService.onIncorrectAnswer()
+        }
+
         viewModelScope.launch {
             delay(2000)
             if (quizState.isQuizCompleted) {
+                feedbackService.onQuizComplete()
                 updateUiState()
             } else {
                 updateUiState()
@@ -70,6 +80,7 @@ class QuizViewModel @Inject constructor(
         quizState = skipQuestionUseCase(quizState)
         
         if (quizState.isQuizCompleted) {
+            feedbackService.onQuizComplete()
             updateUiState()
         } else {
             updateUiState()
@@ -113,6 +124,14 @@ class QuizViewModel @Inject constructor(
             var timeLeft = quizState.questionTimeLimit
             while (timeLeft > 0) {
                 _uiState.value = _uiState.value.copy(timeRemaining = timeLeft)
+                if (timeLeft <= 10) {
+                    feedbackService.onTimerTick()
+                }
+
+                if (timeLeft == 5) {
+                    feedbackService.onTimerHapticWarning()
+                }
+                
                 delay(1000)
                 timeLeft--
             }
@@ -127,5 +146,10 @@ class QuizViewModel @Inject constructor(
     private fun stopTimer() {
         timerJob?.cancel()
         timerJob = null
+    }
+    
+    override fun onCleared() {
+        super.onCleared()
+        feedbackService.release()
     }
 }
