@@ -17,6 +17,7 @@ activity-compose = "1.8.2"
 coroutines = "1.7.3"
 shimmer = "1.2.0"
 foundationLayout = "1.9.4"
+splashscreen = "1.0.1"
 
 [libraries]
 # Core Android
@@ -57,6 +58,9 @@ kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-
 
 # Shimmer
 compose-shimmer = { group = "com.valentinilk.shimmer", name = "compose-shimmer", version.ref = "shimmer" }
+
+# Splash Screen
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "splashscreen" }
 
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
