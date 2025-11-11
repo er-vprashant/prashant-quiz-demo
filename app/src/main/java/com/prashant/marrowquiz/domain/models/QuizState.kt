@@ -1,5 +1,7 @@
 package com.prashant.marrowquiz.domain.models
 
+import com.prashant.marrowquiz.domain.config.QuizConfig
+
 data class QuizState(
     val questions: List<Question> = emptyList(),
     val currentQuestionIndex: Int = 0,
@@ -10,7 +12,7 @@ data class QuizState(
     val longestStreak: Int = 0,
     val startTime: Long = System.currentTimeMillis(),
     val questionStartTime: Long = System.currentTimeMillis(),
-    val questionTimeLimit: Int = 30,
+    val questionTimeLimit: Int = QuizConfig.QUESTION_TIME_LIMIT,
     val answerTimes: Map<Int, Long> = emptyMap(),
     val isQuizCompleted: Boolean = false
 ) {

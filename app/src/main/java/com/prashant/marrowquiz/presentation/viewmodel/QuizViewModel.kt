@@ -11,6 +11,7 @@ import com.prashant.marrowquiz.domain.usecase.ResetQuizUseCase
 import com.prashant.marrowquiz.domain.usecase.SkipQuestionUseCase
 import com.prashant.marrowquiz.presentation.models.QuizUiState
 import com.prashant.marrowquiz.presentation.utils.FeedbackService
+import com.prashant.marrowquiz.domain.config.QuizConfig
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -128,11 +129,11 @@ class QuizViewModel @Inject constructor(
             var timeLeft = quizState.questionTimeLimit
             while (timeLeft > 0 && !isAppInBackground) {
                 _uiState.value = _uiState.value.copy(timeRemaining = timeLeft)
-                if (timeLeft <= 10 && !isAppInBackground) {
+                if (timeLeft <= QuizConfig.TIMER_WARNING_THRESHOLD && !isAppInBackground) {
                     feedbackService.onTimerTick()
                 }
 
-                if (timeLeft == 5 && !isAppInBackground) {
+                if (timeLeft == QuizConfig.HAPTIC_WARNING_THRESHOLD && !isAppInBackground) {
                     feedbackService.onTimerHapticWarning()
                 }
                 
@@ -176,11 +177,11 @@ class QuizViewModel @Inject constructor(
             var timeLeft = startTime
             while (timeLeft > 0 && !isAppInBackground) {
                 _uiState.value = _uiState.value.copy(timeRemaining = timeLeft)
-                if (timeLeft <= 10 && !isAppInBackground) {
+                if (timeLeft <= QuizConfig.TIMER_WARNING_THRESHOLD && !isAppInBackground) {
                     feedbackService.onTimerTick()
                 }
 
-                if (timeLeft == 5 && !isAppInBackground) {
+                if (timeLeft == QuizConfig.HAPTIC_WARNING_THRESHOLD && !isAppInBackground) {
                     feedbackService.onTimerHapticWarning()
                 }
                 
