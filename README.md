@@ -93,24 +93,6 @@ A modern, feature-rich Android quiz application built with **Jetpack Compose** a
 - Android SDK 24+ (Android 7.0)
 - Kotlin 1.9.0+
 
-### Installation
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/marrowquiz.git
-   cd marrowquiz
-   ```
-
-2. **Open in Android Studio**
-   - Open Android Studio
-   - Select "Open an Existing Project"
-   - Navigate to the cloned directory
-
-3. **Build and Run**
-   ```bash
-   ./gradlew assembleDebug
-   ```
-   Or use Android Studio's build button
-
 ## How to Use
 
 ### Playing a Quiz
