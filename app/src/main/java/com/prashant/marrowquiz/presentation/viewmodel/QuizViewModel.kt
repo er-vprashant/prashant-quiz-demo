@@ -2,6 +2,8 @@ package com.prashant.marrowquiz.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import com.prashant.marrowquiz.domain.models.Question
 import com.prashant.marrowquiz.domain.models.QuizState
 import com.prashant.marrowquiz.domain.usecase.AnswerQuestionUseCase
@@ -24,10 +26,12 @@ class QuizViewModel @Inject constructor(
     private val skipQuestionUseCase: SkipQuestionUseCase,
     private val resetQuizUseCase: ResetQuizUseCase,
     private val feedbackService: FeedbackService
-) : ViewModel() {
+) : ViewModel(), DefaultLifecycleObserver {
     
     private var quizState = QuizState()
     private var timerJob: Job? = null
+    private var isAppInBackground = false
+    private var pausedTimeRemaining = 0
     
     private val _uiState = MutableStateFlow(QuizUiState())
     val uiState: StateFlow<QuizUiState> = _uiState.asStateFlow()
@@ -122,13 +126,13 @@ class QuizViewModel @Inject constructor(
         stopTimer()
         timerJob = viewModelScope.launch {
             var timeLeft = quizState.questionTimeLimit
-            while (timeLeft > 0) {
+            while (timeLeft > 0 && !isAppInBackground) {
                 _uiState.value = _uiState.value.copy(timeRemaining = timeLeft)
-                if (timeLeft <= 10) {
+                if (timeLeft <= 10 && !isAppInBackground) {
                     feedbackService.onTimerTick()
                 }
 
-                if (timeLeft == 5) {
+                if (timeLeft == 5 && !isAppInBackground) {
                     feedbackService.onTimerHapticWarning()
                 }
                 
@@ -136,9 +140,11 @@ class QuizViewModel @Inject constructor(
                 timeLeft--
             }
 
-            _uiState.value = _uiState.value.copy(timeRemaining = 0, isTimeUp = true)
-            if (!_uiState.value.isAnswerRevealed) {
-                skipQuestion()
+            if (!isAppInBackground) {
+                _uiState.value = _uiState.value.copy(timeRemaining = 0, isTimeUp = true)
+                if (!_uiState.value.isAnswerRevealed) {
+                    skipQuestion()
+                }
             }
         }
     }
@@ -146,6 +152,49 @@ class QuizViewModel @Inject constructor(
     private fun stopTimer() {
         timerJob?.cancel()
         timerJob = null
+    }
+
+    override fun onPause(owner: LifecycleOwner) {
+        super.onPause(owner)
+        isAppInBackground = true
+        pausedTimeRemaining = _uiState.value.timeRemaining
+        stopTimer()
+    }
+    
+    override fun onResume(owner: LifecycleOwner) {
+        super.onResume(owner)
+        if (isAppInBackground && !_uiState.value.isAnswerRevealed && pausedTimeRemaining > 0) {
+            isAppInBackground = false
+            startTimerWithTime(pausedTimeRemaining)
+        }
+        isAppInBackground = false
+    }
+    
+    private fun startTimerWithTime(startTime: Int) {
+        stopTimer()
+        timerJob = viewModelScope.launch {
+            var timeLeft = startTime
+            while (timeLeft > 0 && !isAppInBackground) {
+                _uiState.value = _uiState.value.copy(timeRemaining = timeLeft)
+                if (timeLeft <= 10 && !isAppInBackground) {
+                    feedbackService.onTimerTick()
+                }
+
+                if (timeLeft == 5 && !isAppInBackground) {
+                    feedbackService.onTimerHapticWarning()
+                }
+                
+                delay(1000)
+                timeLeft--
+            }
+
+            if (!isAppInBackground) {
+                _uiState.value = _uiState.value.copy(timeRemaining = 0, isTimeUp = true)
+                if (!_uiState.value.isAnswerRevealed) {
+                    skipQuestion()
+                }
+            }
+        }
     }
     
     override fun onCleared() {
