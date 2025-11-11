@@ -1,4 +1,4 @@
-# 🧠 MarrowQuiz - Interactive Quiz Application
+# MarrowQuiz - Interactive Quiz Application
 
 A modern, feature-rich Android quiz application built with **Jetpack Compose** and **Material Design 3**. Test your knowledge with timed questions, celebration animations, and intelligent answer shuffling.
 
@@ -42,15 +42,49 @@ A modern, feature-rich Android quiz application built with **Jetpack Compose** a
     └── DTOs (Data Transfer Objects)
 ```
 
-### Tech Stack
-- **UI Framework**: Jetpack Compose with Material Design 3
-- **Architecture**: MVVM with Clean Architecture principles
-- **Dependency Injection**: Hilt (Dagger)
-- **Networking**: Ktor Client with Kotlinx Serialization
-- **State Management**: StateFlow and Compose State
-- **Navigation**: Compose Navigation
-- **Animations**: Compose Animation APIs
-- **Audio**: Android MediaPlayer and ToneGenerator
+## Tech Stack
+
+### Core Technologies
+- **Language**: Kotlin 1.9.0+
+- **Platform**: Android SDK 24+ (API Level 24)
+- **Build System**: Gradle with Kotlin DSL
+- **IDE**: Android Studio Hedgehog+
+
+### Architecture & Design Patterns
+- **Architecture**: Clean Architecture (3-layer: Domain/Data/Presentation)
+- **Design Pattern**: MVVM (Model-View-ViewModel)
+- **Dependency Injection**: Hilt (Dagger-based)
+- **State Management**: StateFlow & Compose State
+- **Configuration**: Centralized QuizConfig object
+
+### UI & User Experience
+- **UI Framework**: Jetpack Compose (Latest Stable)
+- **Design System**: Material Design 3 (Material You)
+- **Navigation**: Jetpack Navigation Compose
+- **Animations**: Compose Animation APIs with Spring Physics
+- **Theming**: Dynamic color system with light/dark mode
+- **Splash Screen**: Android 12+ Splash Screen API
+- **Icons**: Material Icons + Custom Vector Drawables
+
+### Networking & Data
+- **HTTP Client**: Ktor Client for Android
+- **Serialization**: Kotlinx Serialization (JSON)
+- **Data Source**: REST API (GitHub Gist)
+- **Caching**: In-memory with StateFlow
+- **Error Handling**: Comprehensive exception handling
+
+### Audio & Haptics
+- **Audio Framework**: Android MediaPlayer + ToneGenerator
+- **Sound Effects**: System tones for UI feedback
+- **Haptic Feedback**: VibrationEffect API with custom patterns
+- **Background Handling**: Lifecycle-aware audio management
+
+### Development & Testing
+- **Version Control**: Git
+- **Dependency Management**: Gradle Version Catalogs (libs.versions.toml)
+- **Code Generation**: Kapt (Kotlin Annotation Processing)
+- **Testing**: JUnit 4, Espresso, Compose Testing
+- **Code Quality**: Android Lint with custom rules
 
 ## Getting Started
 
