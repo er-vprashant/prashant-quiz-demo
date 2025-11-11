@@ -17,6 +17,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,6 +91,31 @@ private fun LoadingContent() {
             text = "Loading questions...",
             fontSize = 16.sp,
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
+        val tips = listOf(
+            "💡 Tip: Answer quickly to earn bonus points!",
+            "⏰ You have 30 seconds per question",
+            "🔥 Build streaks for better scores!",
+            "🎯 Green means correct, red means wrong"
+        )
+        
+        var currentTipIndex by remember { mutableIntStateOf(0) }
+        
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(1500) // Change tip every 1.5 seconds
+                currentTipIndex = (currentTipIndex + 1) % tips.size
+            }
+        }
+        
+        Text(
+            text = tips[currentTipIndex],
+            fontSize = 14.sp,
+            color = MaterialTheme.colorScheme.secondary,
+            textAlign = TextAlign.Center
         )
         
         Spacer(modifier = Modifier.height(32.dp))

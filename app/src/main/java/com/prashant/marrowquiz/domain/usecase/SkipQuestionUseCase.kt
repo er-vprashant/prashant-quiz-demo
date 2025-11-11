@@ -9,24 +9,24 @@ class SkipQuestionUseCase @Inject constructor() {
         val currentQuestion = currentState.currentQuestion
             ?: return currentState
         
+        val newSkippedQuestions = currentState.skippedQuestions + currentState.currentQuestionIndex
+
+        val currentTime = System.currentTimeMillis()
+        val timeTaken = currentTime - currentState.questionStartTime
+        val newAnswerTimes = currentState.answerTimes + (currentState.currentQuestionIndex to timeTaken)
+
         val newCurrentStreak = 0
-        
-        val newUserAnswers = currentState.userAnswers.toMutableList().apply {
-            while (size <= currentState.currentQuestionIndex) {
-                add(null)
-            }
-            set(currentState.currentQuestionIndex, null)
-        }
-        
-        val newQuestionIndex = currentState.currentQuestionIndex + 1
-        val isQuizCompleted = newQuestionIndex >= currentState.totalQuestions
+
+        val nextQuestionIndex = currentState.currentQuestionIndex + 1
+        val isQuizCompleted = nextQuestionIndex >= currentState.totalQuestions
         
         return currentState.copy(
-            currentQuestionIndex = newQuestionIndex,
-            skippedQuestions = currentState.skippedQuestions + 1,
+            currentQuestionIndex = nextQuestionIndex,
+            skippedQuestions = newSkippedQuestions,
+            answerTimes = newAnswerTimes,
             currentStreak = newCurrentStreak,
-            userAnswers = newUserAnswers,
-            isQuizCompleted = isQuizCompleted
+            isQuizCompleted = isQuizCompleted,
+            questionStartTime = if (isQuizCompleted) currentState.questionStartTime else currentTime
         )
     }
 }

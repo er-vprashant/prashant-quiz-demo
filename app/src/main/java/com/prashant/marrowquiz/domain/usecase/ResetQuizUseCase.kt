@@ -7,14 +7,19 @@ import javax.inject.Inject
 class ResetQuizUseCase @Inject constructor() {
     
     operator fun invoke(questions: List<Question>): QuizState {
+        val currentTime = System.currentTimeMillis()
         return QuizState(
             questions = questions,
             currentQuestionIndex = 0,
+            answers = emptyMap(),
+            skippedQuestions = emptySet(),
             correctAnswers = 0,
-            skippedQuestions = 0,
             currentStreak = 0,
             longestStreak = 0,
-            userAnswers = emptyList(),
+            startTime = currentTime,
+            questionStartTime = currentTime,
+            questionTimeLimit = 30,
+            answerTimes = emptyMap(),
             isQuizCompleted = false
         )
     }

@@ -5,34 +5,35 @@ import javax.inject.Inject
 
 class AnswerQuestionUseCase @Inject constructor() {
     
-    operator fun invoke(currentState: QuizState, selectedOptionIndex: Int): QuizState {
-        val currentQuestion = currentState.currentQuestion
-            ?: return currentState
-        
+    operator fun invoke(
+        currentState: QuizState,
+        selectedOptionIndex: Int
+    ): QuizState {
+        val currentQuestion = currentState.currentQuestion ?: return currentState
         val isCorrect = selectedOptionIndex == currentQuestion.correctOptionIndex
-        val newCorrectAnswers = if (isCorrect) currentState.correctAnswers + 1 else currentState.correctAnswers
+
+        val currentTime = System.currentTimeMillis()
+        val timeTaken = currentTime - currentState.questionStartTime
         
+        val newAnswers = currentState.answers + (currentState.currentQuestionIndex to selectedOptionIndex)
+        val newAnswerTimes = currentState.answerTimes + (currentState.currentQuestionIndex to timeTaken)
+        val newCorrectAnswers = if (isCorrect) currentState.correctAnswers + 1 else currentState.correctAnswers
+
         val newCurrentStreak = if (isCorrect) currentState.currentStreak + 1 else 0
         val newLongestStreak = maxOf(currentState.longestStreak, newCurrentStreak)
-        
-        val newUserAnswers = currentState.userAnswers.toMutableList().apply {
-            // Ensure list is large enough
-            while (size <= currentState.currentQuestionIndex) {
-                add(null)
-            }
-            set(currentState.currentQuestionIndex, selectedOptionIndex)
-        }
-        
-        val newQuestionIndex = currentState.currentQuestionIndex + 1
-        val isQuizCompleted = newQuestionIndex >= currentState.totalQuestions
+
+        val nextQuestionIndex = currentState.currentQuestionIndex + 1
+        val isQuizCompleted = nextQuestionIndex >= currentState.totalQuestions
         
         return currentState.copy(
-            currentQuestionIndex = newQuestionIndex,
+            currentQuestionIndex = nextQuestionIndex,
+            answers = newAnswers,
+            answerTimes = newAnswerTimes,
             correctAnswers = newCorrectAnswers,
             currentStreak = newCurrentStreak,
             longestStreak = newLongestStreak,
-            userAnswers = newUserAnswers,
-            isQuizCompleted = isQuizCompleted
+            isQuizCompleted = isQuizCompleted,
+            questionStartTime = if (isQuizCompleted) currentState.questionStartTime else currentTime
         )
     }
 }

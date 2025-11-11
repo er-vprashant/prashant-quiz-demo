@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.prashant.marrowquiz.domain.usecase.GetQuestionsUseCase
 import com.prashant.marrowquiz.presentation.models.LoadingUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,10 +27,28 @@ class LoadingViewModel @Inject constructor(
     private fun loadQuestions() {
         viewModelScope.launch {
             _uiState.value = LoadingUiState.Loading
+            
+            val startTime = System.currentTimeMillis()
+            
             try {
                 val questions = getQuestionsUseCase()
+
+                val elapsedTime = System.currentTimeMillis() - startTime
+                val minLoadingTime = 2000L
+
+                if (elapsedTime < minLoadingTime) {
+                    delay(minLoadingTime - elapsedTime)
+                }
+                
                 _uiState.value = LoadingUiState.Success(questions)
             } catch (e: Exception) {
+                val elapsedTime = System.currentTimeMillis() - startTime
+                val minLoadingTime = 1500L
+                
+                if (elapsedTime < minLoadingTime) {
+                    delay(minLoadingTime - elapsedTime)
+                }
+                
                 _uiState.value = LoadingUiState.Error(
                     e.message ?: "Failed to load questions"
                 )

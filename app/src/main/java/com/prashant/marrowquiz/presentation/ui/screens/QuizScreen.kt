@@ -8,6 +8,8 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +20,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,6 +45,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.prashant.marrowquiz.domain.models.Question
 import com.prashant.marrowquiz.domain.models.QuizState
 import com.prashant.marrowquiz.presentation.models.QuizUiState
+import com.prashant.marrowquiz.presentation.ui.components.QuizTimer
 import com.prashant.marrowquiz.presentation.viewmodel.QuizViewModel
 
 @Composable
@@ -55,7 +61,9 @@ fun QuizScreen(
     }
     
     LaunchedEffect(uiState.currentQuestionIndex, uiState.totalQuestions) {
+        println("QuizScreen: currentIndex=${uiState.currentQuestionIndex}, total=${uiState.totalQuestions}")
         if (uiState.currentQuestionIndex >= uiState.totalQuestions && uiState.totalQuestions > 0) {
+            println("QuizScreen: Quiz completed! Navigating to results...")
             onQuizCompleted(viewModel.getQuizState())
         }
     }
@@ -63,8 +71,11 @@ fun QuizScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp)
+            .widthIn(max = 600.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         QuizHeader(uiState = uiState)
         
@@ -103,12 +114,22 @@ private fun QuizHeader(uiState: QuizUiState) {
                 fontWeight = FontWeight.SemiBold
             )
             
-            AnimatedVisibility(
-                visible = uiState.showStreakBadge,
-                enter = scaleIn() + fadeIn(),
-                exit = scaleOut() + fadeOut()
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                StreakBadge(streak = uiState.currentStreak)
+                AnimatedVisibility(
+                    visible = uiState.showStreakBadge,
+                    enter = scaleIn() + fadeIn(),
+                    exit = scaleOut() + fadeOut()
+                ) {
+                    StreakBadge(streak = uiState.currentStreak)
+                }
+                
+                QuizTimer(
+                    timeRemaining = uiState.timeRemaining,
+                    timeLimit = uiState.timeLimit
+                )
             }
         }
         
@@ -159,8 +180,8 @@ private fun QuestionCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
                 text = question.question,
@@ -222,6 +243,7 @@ private fun OptionButton(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .height(56.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
             .border(
@@ -229,7 +251,11 @@ private fun OptionButton(
                 color = borderColor,
                 shape = RoundedCornerShape(12.dp)
             )
-            .clickable(enabled = enabled) { onClick() }
+            .clickable(
+                enabled = enabled,
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() }
+            ) { onClick() }
             .padding(16.dp)
     ) {
         Row(

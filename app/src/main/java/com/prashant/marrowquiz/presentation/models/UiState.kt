@@ -20,7 +20,10 @@ data class QuizUiState(
     val isAnswerRevealed: Boolean = false,
     val selectedOptionIndex: Int? = null,
     val isCorrect: Boolean? = null,
-    val showStreakBadge: Boolean = false
+    val showStreakBadge: Boolean = false,
+    val timeRemaining: Int = 30,
+    val timeLimit: Int = 30,
+    val isTimeUp: Boolean = false
 ) {
     val progressText: String get() = "${currentQuestionIndex + 1}/$totalQuestions"
 }

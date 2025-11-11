@@ -9,6 +9,7 @@ import com.prashant.marrowquiz.domain.usecase.ResetQuizUseCase
 import com.prashant.marrowquiz.domain.usecase.SkipQuestionUseCase
 import com.prashant.marrowquiz.presentation.models.QuizUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +25,7 @@ class QuizViewModel @Inject constructor(
 ) : ViewModel() {
     
     private var quizState = QuizState()
+    private var timerJob: Job? = null
     
     private val _uiState = MutableStateFlow(QuizUiState())
     val uiState: StateFlow<QuizUiState> = _uiState.asStateFlow()
@@ -31,10 +33,13 @@ class QuizViewModel @Inject constructor(
     fun initializeQuiz(questions: List<Question>) {
         quizState = resetQuizUseCase(questions)
         updateUiState()
+        startTimer()
     }
     
     fun selectAnswer(optionIndex: Int) {
         if (_uiState.value.isAnswerRevealed) return
+        
+        stopTimer()
         
         val currentQuestion = quizState.currentQuestion ?: return
         val isCorrect = optionIndex == currentQuestion.correctOptionIndex
@@ -46,12 +51,14 @@ class QuizViewModel @Inject constructor(
         )
         
         quizState = answerQuestionUseCase(quizState, optionIndex)
-        
+
         viewModelScope.launch {
             delay(2000)
             if (quizState.isQuizCompleted) {
+                updateUiState()
             } else {
                 updateUiState()
+                startTimer()
             }
         }
     }
@@ -59,19 +66,23 @@ class QuizViewModel @Inject constructor(
     fun skipQuestion() {
         if (_uiState.value.isAnswerRevealed) return
         
+        stopTimer()
         quizState = skipQuestionUseCase(quizState)
         
         if (quizState.isQuizCompleted) {
-            // TODO
+            updateUiState()
         } else {
             updateUiState()
+            startTimer()
         }
     }
     
     fun restartQuiz() {
         if (quizState.questions.isNotEmpty()) {
+            stopTimer()
             quizState = resetQuizUseCase(quizState.questions)
             updateUiState()
+            startTimer()
         }
     }
     
@@ -89,7 +100,32 @@ class QuizViewModel @Inject constructor(
             isAnswerRevealed = false,
             selectedOptionIndex = null,
             isCorrect = null,
-            showStreakBadge = quizState.currentStreak >= 3
+            showStreakBadge = quizState.currentStreak >= 3,
+            timeRemaining = quizState.questionTimeLimit,
+            timeLimit = quizState.questionTimeLimit,
+            isTimeUp = false
         )
+    }
+    
+    private fun startTimer() {
+        stopTimer()
+        timerJob = viewModelScope.launch {
+            var timeLeft = quizState.questionTimeLimit
+            while (timeLeft > 0) {
+                _uiState.value = _uiState.value.copy(timeRemaining = timeLeft)
+                delay(1000)
+                timeLeft--
+            }
+
+            _uiState.value = _uiState.value.copy(timeRemaining = 0, isTimeUp = true)
+            if (!_uiState.value.isAnswerRevealed) {
+                skipQuestion()
+            }
+        }
+    }
+    
+    private fun stopTimer() {
+        timerJob?.cancel()
+        timerJob = null
     }
 }
