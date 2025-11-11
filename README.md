@@ -24,7 +24,7 @@ A modern, feature-rich Android quiz application built with **Jetpack Compose** a
 - **Option Shuffling** - Intelligent randomization of answer positions
 - **Configurable Settings** - Easy-to-modify quiz behavior via QuizConfig
 
-##️ Architecture
+## Architecture
 
 ### Clean Architecture
 ```
@@ -42,7 +42,7 @@ A modern, feature-rich Android quiz application built with **Jetpack Compose** a
     └── DTOs (Data Transfer Objects)
 ```
 
-###️ Tech Stack
+### Tech Stack
 - **UI Framework**: Jetpack Compose with Material Design 3
 - **Architecture**: MVVM with Clean Architecture principles
 - **Dependency Injection**: Hilt (Dagger)
@@ -86,7 +86,7 @@ A modern, feature-rich Android quiz application built with **Jetpack Compose** a
 4. **See results** - Celebration animations for correct answers
 5. **View final score** - Complete quiz statistics and performance
 
-###️Configuration
+### Configuration
 Modify quiz behavior in `QuizConfig.kt`:
 ```kotlin
 object QuizConfig {
